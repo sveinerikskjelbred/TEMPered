@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <tempered.h>
 #include <getopt.h>
 #include <tempered-util.h>
@@ -159,12 +160,21 @@ void print_device_sensor(
 ) {
 	float tempC, rel_hum;
 	int type = tempered_get_sensor_type( device, sensor );
+    time_t timer;
+    char time_buffer[26];
+    struct tm* tm_info;
+
+    time(&timer);
+    tm_info = localtime(&timer);
+    strftime(time_buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+
 	if ( type & TEMPERED_SENSOR_TYPE_TEMPERATURE )
 	{
 		if ( !tempered_get_temperature( device, sensor, &tempC ) )
 		{
 			fprintf(
-				stderr, "%s %i: Failed to get the temperature: %s\n",
+				stderr, "[%s] %s %i: Failed to get the temperature: %s\n",
+                time_buffer,
 				tempered_get_device_path( device ), sensor,
 				tempered_error( device )
 			);
@@ -182,8 +192,9 @@ void print_device_sensor(
 		if ( !tempered_get_humidity( device, sensor, &rel_hum ) )
 		{
 			fprintf(
-				stderr, "%s %i: Failed to get the humidity: %s\n",
-				tempered_get_device_path( device ), sensor,
+				stderr, "[%s] %s %i: Failed to get the humidity: %s\n",
+				time_buffer,
+                tempered_get_device_path( device ), sensor,
 				tempered_error( device )
 			);
 			type &= ~TEMPERED_SENSOR_TYPE_HUMIDITY;
@@ -194,9 +205,11 @@ void print_device_sensor(
 		( type & TEMPERED_SENSOR_TYPE_HUMIDITY )
 	) {
 		printf(
+            "[%s]"
 			"%s %i: temperature %.2f %s"
 				", relative humidity %.1f%%"
 				", dew point %.1f %s\n",
+            time_buffer,
 			tempered_get_device_path( device ), sensor,
 			options->temp_scale->from_celsius( tempC ),
 			options->temp_scale->symbol,
@@ -210,8 +223,9 @@ void print_device_sensor(
 	else if ( type & TEMPERED_SENSOR_TYPE_TEMPERATURE )
 	{
 		printf(
-			"%s %i: temperature %.2f %s\n",
-			tempered_get_device_path( device ), sensor,
+			"[%s] %s %i: temperature %.2f %s\n",
+			time_buffer,
+            tempered_get_device_path( device ), sensor,
 			options->temp_scale->from_celsius( tempC ),
 			options->temp_scale->symbol
 		);
@@ -219,16 +233,18 @@ void print_device_sensor(
 	else if ( type & TEMPERED_SENSOR_TYPE_HUMIDITY )
 	{
 		printf(
-			"%s %i: relative humidity %.1f%%\n",
-			tempered_get_device_path( device ), sensor,
+			"[%s] %s %i: relative humidity %.1f%%\n",
+			time_buffer,
+            tempered_get_device_path( device ), sensor,
 			rel_hum
 		);
 	}
 	else
 	{
 		printf(
-			"%s %i: no sensor data available\n",
-			tempered_get_device_path( device ), sensor
+			"[%s] %s %i: no sensor data available\n",
+			time_buffer,
+            tempered_get_device_path( device ), sensor
 		);
 	}
 }
